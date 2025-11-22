@@ -1,0 +1,49 @@
+Option Explicit
+
+' === References Required ===
+' Microsoft ActiveX Data Objects x.x Library (set via Tools > References)
+
+Public Sub PullTeamTaskData()
+    On Error GoTo ErrHandler
+    
+    Dim conn As Object
+    Dim rs As Object
+    Dim sql As String
+    Dim targetSheet As Worksheet
+    Dim targetTable As ListObject
+    
+    ' SQL query to read all TeamTaskData
+    sql = "SELECT * FROM TeamTaskData"
+    
+    Set targetSheet = ThisWorkbook.Sheets("TeamTaskDataSheet") ' Sheet where table resides
+    Set targetTable = targetSheet.ListObjects("TeamTaskData")
+    
+    ' Clear existing table rows
+    If targetTable.ListRows.Count > 0 Then
+        targetTable.DataBodyRange.Delete
+    End If
+    
+    ' Create ADO connection
+    Set conn = CreateObject("ADODB.Connection")
+    conn.Open "Provider=SQLOLEDB;Data Source=Task_Data;Initial Catalog=Task_Data;Integrated Security=SSPI;"
+    
+    ' Execute query
+    Set rs = CreateObject("ADODB.Recordset")
+    rs.Open sql, conn, 1, 3  ' adOpenKeyset, adLockOptimistic
+    
+    ' Copy data to table
+    If Not rs.EOF Then
+        targetTable.DataBodyRange.Cells(1, 1).CopyFromRecordset rs
+    End If
+    
+    rs.Close
+    conn.Close
+    Set rs = Nothing
+    Set conn = Nothing
+    
+    Exit Sub
+ErrHandler:
+    MsgBox "Error reading data from SQL Server: " & Err.Description
+    If Not rs Is Nothing Then If rs.State = 1 Then rs.Close
+    If Not conn Is Nothing Then If conn.State = 1 Then conn.Close
+End Sub
