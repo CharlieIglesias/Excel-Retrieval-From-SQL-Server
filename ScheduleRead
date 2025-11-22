@@ -1,0 +1,70 @@
+Option Explicit
+
+Private Const REFRESH_READ_TIME As String = "09:00:00"
+Private Const INFO_SHEET As String = "Information"
+Private Const STATUS_CELL As String = "H3"      ' Status cell for read macro
+Private Const LAST_READ_CELL As String = "H4"   ' Last run date
+
+Public Sub ScheduleDailyRead()
+    On Error GoTo SafeExit
+    Dim readTime As Date
+    readTime = TimeValue(REFRESH_READ_TIME)
+    
+    On Error Resume Next
+    Application.OnTime EarliestTime:=readTime, Procedure:="RefreshAtReadTime", Schedule:=False
+    On Error GoTo SafeExit
+    Application.OnTime EarliestTime:=readTime, Procedure:="RefreshAtReadTime", Schedule:=True
+    
+    Dim ws As Worksheet
+    Dim lastRead As Variant
+    Set ws = ThisWorkbook.Sheets(INFO_SHEET)
+    lastRead = ws.Range(LAST_READ_CELL).Value
+    
+    If Not IsDate(lastRead) Then lastRead = 0
+    If (lastRead = 0 And Time >= readTime) _
+       Or (Date > lastRead And Time > readTime) Then
+        Call RefreshAtReadTime
+    End If
+
+SafeExit:
+    Exit Sub
+End Sub
+
+Public Sub RefreshAtReadTime()
+    On Error GoTo CleanFail
+    
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(INFO_SHEET)
+    Dim statusCell As Range
+    Set statusCell = ws.Range(STATUS_CELL)
+    
+    ' Wait if another macro is running
+    Dim tStart As Single
+    tStart = Timer
+    Do While statusCell.Value = "Running"
+        DoEvents
+        If Timer - tStart > 20 Then GoTo CleanFail
+    Loop
+    
+    statusCell.Value = "Running"
+    ws.Parent.Save
+    
+    ' Wait 10 seconds to ensure any prior refresh is complete
+    Application.Wait (Now + TimeValue("0:00:10"))
+    
+    ' Call SQL read sub in Module 2
+    Call SQL_Read.PullTeamTaskData
+    
+    ' Wait 10 seconds after reading
+    Application.Wait (Now + TimeValue("0:00:10"))
+    
+    ' Reset status and mark last run
+    statusCell.Value = ""
+    ws.Range(LAST_READ_CELL).Value = Date
+    ws.Parent.Save
+    Exit Sub
+
+CleanFail:
+    statusCell.Value = ""
+    MsgBox "SQL Read macro failed or timed out."
+End Sub
