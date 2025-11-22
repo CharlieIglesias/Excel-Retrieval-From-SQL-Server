@@ -17,7 +17,7 @@ This Excel macro automates reading departmental data from the secure **Task_Data
    - Waits 10 seconds to ensure the workbook is ready.  
    - Pulls the `TeamTaskData` table from SQL Server into the Excel table.  
    - Waits another 10 seconds and then clears the **Running** status and logs the last read date.  
-4. The Excel table is now ready for downstream productivity and utilisation calculations.  
+4. The Excel table is then used for downstream productivity and utilisation calculations using Power Query, Pivot Tables and Data Model.  
 
 ## Technologies / Tools
 - Excel VBA (Macros)  
