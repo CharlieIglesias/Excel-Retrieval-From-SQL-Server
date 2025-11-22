@@ -25,7 +25,10 @@ Public Sub PullTeamTaskData()
     
     ' Create ADO connection
     Set conn = CreateObject("ADODB.Connection")
-    conn.Open "Provider=SQLOLEDB;Data Source=Task_Data;Initial Catalog=Task_Data;Integrated Security=SSPI;"
+    ' Connect using SQL login instead of Windows authentication
+    conn.ConnectionString = "Provider=SQLOLEDB;Data Source=Task_Data;Initial Catalog=Task_Data;" & _
+                            "User ID=ExcelUser;Password=Password1;"
+    conn.Open
     
     ' Execute query
     Set rs = CreateObject("ADODB.Recordset")
