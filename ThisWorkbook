@@ -1,0 +1,4 @@
+Private Sub Workbook_Open()
+    ' Schedule SQL read at 9am daily or first time after 9am
+    Call ScheduleDailyRead
+End Sub
